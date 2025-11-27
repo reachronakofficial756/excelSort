@@ -204,10 +204,14 @@ except Exception as exc:  # pragma: no cover - runtime error path
 
 @app.route("/")
 def index():
-    if not ALL_MOBILES:
-        abort(500, description="No matching mobile numbers found in both datasets.")
-    # redirect to first customer page
-    return customer_page(1)
+    """Serve the landing page."""
+    try:
+        return app.send_static_file('index.html')
+    except Exception:
+        # Fallback: redirect to first customer page if static file not found
+        if not ALL_MOBILES:
+            abort(500, description="No matching mobile numbers found in both datasets.")
+        return redirect(url_for('customer_page', page=1))
 
 
 @app.route("/search", methods=["POST"])
