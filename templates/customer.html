@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Customer Profile Pages</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <header class="app-header">
+        <div class="header-top-row">
+          <div>
+            <div class="title-row">
+              <div class="emoji">📑</div>
+              <h1>Customer Profile Pages</h1>
+            </div>
+            <p class="subtitle">
+              Matching Phone Numbers - SDR &amp; Zomato Database
+            </p>
+            <p class="page-info">Page {{ current_page }} of {{ total_pages }}</p>
+          </div>
+
+          <form class="search-form" method="post" action="{{ url_for('search') }}">
+            <label for="mobile-input" class="search-label">Jump to phone:</label>
+            <input
+              id="mobile-input"
+              name="mobile"
+              type="text"
+              maxlength="20"
+              placeholder="Enter mobile number"
+              class="search-input"
+              required
+            />
+            <button type="submit" class="btn btn-primary search-btn">Go</button>
+          </form>
+        </div>
+
+        <div class="pagination-bar">
+          {% if current_page > 1 %}
+          <a class="btn btn-outline" href="{{ url_for('customer_page', page=current_page-1) }}">
+            ← Previous
+          </a>
+          {% else %}
+          <span class="btn btn-outline disabled">← Previous</span>
+          {% endif %}
+
+          <span class="page-label">Page numbers:</span>
+
+          <div class="page-number-buttons">
+            {% for p in page_numbers %}
+              {% if p == current_page %}
+              <span class="btn btn-primary active">{{ p }}</span>
+              {% else %}
+              <a class="btn btn-primary" href="{{ url_for('customer_page', page=p) }}">{{ p }}</a>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          {% if current_page < total_pages %}
+          <a class="btn btn-outline" href="{{ url_for('customer_page', page=current_page+1) }}">
+            Next →
+          </a>
+          {% else %}
+          <span class="btn btn-outline disabled">Next →</span>
+          {% endif %}
+        </div>
+      </header>
+
+      <main>
+        <section class="profile-card">
+          <div class="profile-header">
+            <h2 class="profile-title">Customer Profile</h2>
+            <div class="phone-number">{{ mobile_display }}</div>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <section class="sdr-section">
+            <h3 class="section-title">
+              SDR Database – {{ sdr_rows|length }} Records Found
+            </h3>
+
+            {% if sdr_rows %}
+            <div class="sdr-rows">
+              {% for row in sdr_rows %}
+              <article class="sdr-card">
+                <h4 class="sdr-row-title">Row {{ row.index }}: {{ row.name }}</h4>
+
+                <ul class="sdr-address-list">
+                  <li>
+                    <span class="icon">📍</span>
+                    <span class="label">Present:</span>
+                    <span class="value">{{ row.present_address }}</span>
+                  </li>
+                  <li>
+                    <span class="icon">🏠</span>
+                    <span class="label">Permanent:</span>
+                    <span class="value">{{ row.permanent_address }}</span>
+                  </li>
+                  {% if row.alt_number %}
+                  <li>
+                    <span class="icon">📞</span>
+                    <span class="label">Alternate:</span>
+                    <span class="value">{{ row.alt_number }}</span>
+                  </li>
+                  {% endif %}
+                </ul>
+              </article>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-text">No SDR records for this phone number.</p>
+            {% endif %}
+          </section>
+
+          <section class="summary-section">
+            <h3 class="section-title">SDR Profile Information</h3>
+
+            <div class="summary-grid">
+              <div class="summary-row">
+                <span class="summary-label">Phone Number</span>
+                <span class="summary-value">
+                  {{ mobile_display }} (with country code: {{ mobile_with_country }})
+                </span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Customer Status</span>
+                <span class="summary-value status">
+                  {% if is_active %}
+                    <span class="status-dot status-dot--green"></span>
+                    Verified Active Customer
+                  {% else %}
+                    <span class="status-dot status-dot--grey"></span>
+                    Inactive / No Orders
+                  {% endif %}
+                </span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Database Match</span>
+                <span class="summary-value">
+                  ✓ Present in both SDR &amp; Zomato
+                </span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Total Orders (Zomato)</span>
+                <span class="summary-value">{{ total_orders }} Orders</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Primary City</span>
+                <span class="summary-value">
+                  {{ primary_city if primary_city else "N/A" }}
+                </span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Average Order Value</span>
+                <span class="summary-value">₹ {{ "%.2f"|format(avg_order_value) }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="orders-section">
+            <header class="orders-header">
+              <h3 class="section-title">Zomato Order History</h3>
+            </header>
+
+            {% if orders %}
+            <div class="orders-table-wrapper">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Customer Name</th>
+                    <th>Restaurant</th>
+                    <th>Order Value</th>
+                    <th>Order Time</th>
+                    <th>Delivery Address</th>
+                    <th>LAT</th>
+                    <th>LONG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for order in orders %}
+                  <tr>
+                    <td>{{ order.index }}</td>
+                    <td>{{ order.customer_name }}</td>
+                    <td>{{ order.restaurant }}</td>
+                    <td>₹ {{ "%.2f"|format(order.order_value) }}</td>
+                    <td>{{ order.order_time }}</td>
+                    <td>{{ order.delivery_address }}</td>
+                    <td>{{ order.lat }}</td>
+                    <td>{{ order.lon }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="empty-text">No Zomato orders found for this phone number.</p>
+            {% endif %}
+          </section>
+
+          <div class="bottom-pagination">
+            {% if current_page > 1 %}
+            <a class="btn btn-outline" href="{{ url_for('customer_page', page=current_page-1) }}">
+              ← Previous
+            </a>
+            {% else %}
+            <span class="btn btn-outline disabled">← Previous</span>
+            {% endif %}
+
+            {% if current_page < total_pages %}
+            <a class="btn btn-outline" href="{{ url_for('customer_page', page=current_page+1) }}">
+              Next →
+            </a>
+            {% else %}
+            <span class="btn btn-outline disabled">Next →</span>
+            {% endif %}
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
+
+
