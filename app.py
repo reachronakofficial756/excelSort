@@ -206,7 +206,8 @@ except Exception as exc:  # pragma: no cover - runtime error path
 def index():
     """Serve the landing page."""
     try:
-        return app.send_static_file('index.html')
+        with open('index.html', 'r', encoding='utf-8') as f:
+            return f.read()
     except Exception:
         # Fallback: redirect to first customer page if static file not found
         if not ALL_MOBILES:
